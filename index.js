@@ -6,6 +6,9 @@ const OpenAI = require("openai").default;
 // Short-term memory for each channel
 const channelMemory = new Map();
 
+// Personality memory for each user
+const userProfiles = new Map();
+
 // Track last activity in each channel
 const lastActivity = new Map();
 
@@ -70,12 +73,36 @@ let observationMode = false;
   
 lastActivity.set(message.channel.id, Date.now());
 
+  // Create profile if user doesn't have one
+if (!userProfiles.has(message.author.id)) {
+    userProfiles.set(message.author.id, {
+        name: message.author.username,
+        messages: 0,
+        chaosScore: 0
+    });
+}
+
+const profile = userProfiles.get(message.author.id);
+
+// Update profile
+profile.messages++;
+profile.lastSeen = Date.now();
+
+const lower = message.content.toLowerCase();
+
+if (lower.includes("fuck") || lower.includes("idiot") || lower.includes("stupid")) {
+    profile.chaosScore++;
+}
+
   // Store memory per channel
 if (!channelMemory.has(message.channel.id)) {
     channelMemory.set(message.channel.id, []);
 }
 
 const memory = channelMemory.get(message.channel.id);
+
+// Personality memory for each user
+  const userProfiles = new Map();
 
 // Add message to memory
 memory.push({
@@ -162,6 +189,29 @@ const completion = await openai.chat.completions.create({
 model: "gpt-4o-mini",
 messages: [
 { role: "system", content: HUSH_PROMPT },
+
+{
+role: "system",
+content: `User profile:
+Name: ${profile.name}
+Messages sent: ${profile.messages}
+Chaos level: ${profile.chaosScore}
+
+You have been observing this user over time.`
+},
+
+{
+role: "system",
+content: `If chaos level is high, you treat them like a troublemaker.
+If they talk a lot, tease them for always being around.
+If they rarely talk, comment on their silence.
+Respond naturally like a real person who remembers others.`
+},
+
+...memory
+]
+});
+    
 { role: "system", content: observationMode ? "You are quietly observing the conversation and making a sarcastic or mysterious observation." : "" },
 ...memory,
 ]
@@ -170,7 +220,7 @@ messages: [
 const reply = completion.choices[0].message.content;
 
 memory.push({
-  role: "assistant"
+  role: "assistant",
   content: 'Hush: ${reply}'
   });
 
