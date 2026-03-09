@@ -188,6 +188,7 @@ if (silenceTime > 15 * 60 * 1000) {
 const completion = await openai.chat.completions.create({
 model: "gpt-4o-mini",
 messages: [
+
 { role: "system", content: HUSH_PROMPT },
 
 {
@@ -208,15 +209,17 @@ If they rarely talk, comment on their silence.
 Respond naturally like a real person who remembers others.`
 },
 
-...memory
-]
-});
-    
-{ role: "system", content: observationMode ? "You are quietly observing the conversation and making a sarcastic or mysterious observation." : "" },
-...memory,
-]
-});
+{
+role: "system",
+content: observationMode
+? "You are quietly observing the conversation and making a sarcastic or mysterious observation."
+: ""
+},
 
+...memory
+
+]
+    
 const reply = completion.choices[0].message.content;
 
 memory.push({
