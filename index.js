@@ -6,6 +6,9 @@ const OpenAI = require("openai").default;
 // Short-term memory for each channel
 const channelMemory = new Map();
 
+// Track last activity in each channel
+const lastActivity = new Map();
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -62,6 +65,10 @@ client.on("messageCreate", async (message) => {
 
   if(message.author.bot) return;
   if(!message.content) return;
+
+let observationMode = false;
+  
+lastActivity.set(message.channel.id, Date.now());
 
   // Store memory per channel
 if (!channelMemory.has(message.channel.id)) {
@@ -123,6 +130,32 @@ if (Math.random() < 0.10) {
 }
 
 if (!shouldRespond) return;
+
+// Check if the server has been quiet
+const last = lastActivity.get(message.channel.id) || Date.now();
+const silenceTime = Date.now() - last;
+
+// 15 minutes of silence
+if (silenceTime > 15 * 60 * 1000) {
+
+    if (Math.random() < 0.25) {
+
+        const ghostMessages = [
+            "It's strangely quiet in here tonight… 🕯️",
+            "Did everyone disappear…?",
+            "I was enjoying the chaos earlier. Now it's just silence.",
+            "Sometimes I wonder what everyone is doing when the server goes quiet.",
+            "The silence here feels… unusual."
+        ];
+
+        const ghost = ghostMessages[Math.floor(Math.random() * ghostMessages.length)];
+
+      await message.channel.sendTyping();
+      message.channel.send(ghost);
+
+        lastActivity.set(message.channel.id, Date.now());
+    }
+}
 
 // Send conversation to OpenAI
 const completion = await openai.chat.completions.create({
