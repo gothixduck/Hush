@@ -12,9 +12,12 @@ const userProfiles = new Map();
 // Track last activity in each channel
 const lastActivity = new Map();
 
+// Hush Message
+const lastHushMessage = new Map();
+
 // Prevent Hush from talking too frequently
 const last = lastHushMessage.get(message.channel.id) || 0;
-const cooldown 15000; // 15 seconds
+const cooldown = 15000; // 15 seconds
 
 if (Date.now() - last < cooldown) return;
 
@@ -77,7 +80,13 @@ client.on("messageCreate", async (message) => {
   if(!message.content) return;
 
 let observationMode = false;
-  
+
+// prevent Hush from talking too frequently
+const last = lastHushMessage.get(message.channel.id) || 0;
+const cooldown = 15000;
+
+if (Date.now() - last < cooldown) return;
+
 lastActivity.set(message.channel.id, Date.now());
 
   // Create profile if user doesn't have one
@@ -241,7 +250,7 @@ if (Math.random() < 0.5) {
 } else {
     message.channel.send(reply);
 }
-
+    
 // record when Hush last spoke
 lastHushMessage.set(message.channel.id, Date.now());
 
