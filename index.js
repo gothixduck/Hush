@@ -136,11 +136,15 @@ client.on("messageCreate", async (message) => {
 
     if (text.includes("fight") || text.includes("drama") || text.includes("chaos")) shouldRespond = true;
 
-    // Random observation chance
-    if (Math.random() < 0.08) {
-      shouldRespond = true;
-      observationMode = true;
-    }
+    // Don't interrupt if only one user talking
+const uniqueUsers = new Set(messages.map(m => m.author.id));
+if (uniqueUsers.size < 2) return;
+
+// Random observation mode (only if conversation happening)
+if (conversation.length > 6 && Math.random() < 0.03) {
+    shouldRespond = true;
+    observationMode = true;
+}
 
     if (!shouldRespond) return;
 
