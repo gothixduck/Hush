@@ -59,8 +59,7 @@ client.on("messageCreate", async (message) => {
 
   if(message.author.bot) return;
 
-  // 50% chance to respond
-  if(Math.random() > 0.15) return;
+  // if(Math.random() > 0.6) return;
 
   try {
 
