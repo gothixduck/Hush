@@ -64,7 +64,7 @@ client.on("messageCreate", async (message) => {
  
   try {
 
-await message.channel.sendTyping()
+await message.channel.sendTyping();
 
 // thinking delay (1–4 seconds)
 await new Promise(r => setTimeout(r, Math.random()*3000 + 1000));
@@ -83,8 +83,12 @@ const conversation = messages
 const text = conversation.map(m => m.content.toLowerCase()).join(" ");
 
     let shouldRespond = false;
+    let observationMode = false;
 
-// Someone mentioned hush
+// someone talking directly to hush
+if (/^hush\b/i.test(message.content)) shouldRespond = true;
+
+// hush mentioned in conversation
 if (/\bhush\b/i.test(text)) shouldRespond = true;
 
 // People arguing
@@ -93,8 +97,11 @@ if (text.includes("fuck") || text.includes("idiot") || text.includes("stupid")) 
 // Chaos keywords
 if (text.includes("fight") || text.includes("drama") || text.includes("chaos")) shouldRespond = true;
 
-// Random lurking comment
-if (Math.random() < 0.15) shouldRespond = true;
+// Random observation mode
+if (Math.random() < 0.10) {
+    shouldRespond = true;
+    observationMode = true;
+}
 
 if (!shouldRespond) return;
 
@@ -103,6 +110,7 @@ const completion = await openai.chat.completions.create({
 model: "gpt-4o-mini",
 messages: [
 { role: "system", content: HUSH_PROMPT },
+{ role: "system", content: observationMode ? "You are quietly observing the conversation and making a sarcastic or mysterious observation." : "" },
 ...conversation
 ]
 });
