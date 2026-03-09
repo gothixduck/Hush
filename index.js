@@ -64,11 +64,24 @@ client.on("messageCreate", async (message) => {
   try {
 
 await message.channel.sendTyping()
+
+// Get last 20 messages from the channel
+const messages = await message.channel.messages.fetch({ limit: 20 });
+
+// Convert them into conversation format
+const conversation = messages
+.reverse()
+.map(msg => ({
+    role: msg.author.bot ? "assistant" : "user",
+    content: `${msg.author.username}: ${msg.content}`
+}));
+
+// Send conversation to OpenAI
 const completion = await openai.chat.completions.create({
 model: "gpt-4o-mini",
 messages: [
 { role: "system", content: HUSH_PROMPT },
-{ role: "user", content: message.content }
+...conversation
 ]
 });
 
