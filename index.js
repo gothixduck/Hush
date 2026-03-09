@@ -12,14 +12,9 @@ const userProfiles = new Map();
 // Track last activity in each channel
 const lastActivity = new Map();
 
-// Hush Message
+// Track last Hush Message
 const lastHushMessage = new Map();
 
-// Prevent Hush from talking too frequently
-const last = lastHushMessage.get(message.channel.id) || 0;
-const cooldown = 15000; // 15 seconds
-
-if (Date.now() - last < cooldown) return;
 
 const client = new Client({
   intents: [
@@ -81,7 +76,7 @@ client.on("messageCreate", async (message) => {
 
 let observationMode = false;
 
-// prevent Hush from talking too frequently
+// Prevent Hush from talking too frequently
 const last = lastHushMessage.get(message.channel.id) || 0;
 const cooldown = 15000;
 
@@ -199,23 +194,29 @@ if (silenceTime > 15 * 60 * 1000) {
         lastActivity.set(message.channel.id, Date.now());
     }
 }
+    
+// Hush "thinking"
+await message.channel.sendTyping();
+await new Promise(r => setTimeout(r, Math.random() * 4000 + 1000));
 
 // Send conversation to OpenAI
 const completion = await openai.chat.completions.create({
-model: "gpt-4o-mini",
-messages: [
+    model: "gpt-4o-mini",
+    messages: [
+        { role: "system", content: HUSH_PROMPT },
 
-{ role: "system", content: HUSH_PROMPT },
-
-{
-role: "system",
-content: `User profile:
+        {
+            role: "system",
+            content: `User profile:
 Name: ${profile.name}
 Messages sent: ${profile.messages}
 Chaos level: ${profile.chaosScore}
-
 You have been observing this user over time.`
-},
+        },
+
+        ...memory
+    ]
+});
 
 {
 role: "system",
