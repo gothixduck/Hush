@@ -58,6 +58,7 @@ client.once("ready", () => {
 client.on("messageCreate", async (message) => {
 
   if(message.author.bot) return;
+  if(!message.content) return;
 
   // if(Math.random() < 0.6) {
  
@@ -65,9 +66,12 @@ client.on("messageCreate", async (message) => {
 
 await message.channel.sendTyping()
 
+// thinking delay (1–4 seconds)
+await new Promise(r => setTimeout(r, Math.random()*3000 + 1000));
+
 // Get last 20 messages from the channel
 const messages = await message.channel.messages.fetch({ limit: 20 });
-
+    
 // Convert them into conversation format
 const conversation = messages
 .reverse()
@@ -75,6 +79,24 @@ const conversation = messages
     role: msg.author.bot ? "assistant" : "user",
     content: `${msg.author.username}: ${msg.content}`
 }));
+
+const text = conversation.map(m => m.content.toLowerCase()).join(" ");
+
+    let shouldRespond = false;
+
+// Someone mentioned hush
+if (/\bhush\b/i.test(text)) shouldRespond = true;
+
+// People arguing
+if (text.includes("fuck") || text.includes("idiot") || text.includes("stupid")) shouldRespond = true;
+
+// Chaos keywords
+if (text.includes("fight") || text.includes("drama") || text.includes("chaos")) shouldRespond = true;
+
+// Random lurking comment
+if (Math.random() < 0.15) shouldRespond = true;
+
+if (!shouldRespond) return;
 
 // Send conversation to OpenAI
 const completion = await openai.chat.completions.create({
