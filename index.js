@@ -71,6 +71,51 @@ client.on("messageCreate", async (message) => {
 
   let observationMode = false;
 
+  const content = message.content.toLowerCase();
+
+// Return to void command
+if (content === "!return to void") {
+    hushInVoid = true;
+    message.channel.send("Hush fades into the void… 🕯");
+    return;
+}
+
+// Sacrifice command
+if (content.startsWith("!sacrifice")) {
+
+    const target = message.mentions.users.first();
+
+    if (!target) {
+        message.channel.send("Someone must be offered to the void.");
+        return;
+    }
+
+    const lines = [
+        `The void accepts ${target.username}'s soul… 🥀`,
+        `${target.username} has been offered to the shadows.`,
+        `A sacrifice has been made… the void is pleased.`,
+        `${target.username} disappears into darkness.`
+    ];
+
+    const line = lines[Math.floor(Math.random()*lines.length)];
+
+    message.channel.send(line);
+
+    return;
+}
+
+// If Hush is in the void she stays silent unless mentioned
+if (hushInVoid) {
+
+    if (!message.content.toLowerCase().includes("hush")) {
+        return;
+    }
+
+    hushInVoid = false;
+    message.channel.send("The void releases me…");
+}
+  
+
   // Cooldown to stop spam
   const lastHush = lastHushMessage.get(message.channel.id) || 0;
   const cooldown = 15000;
