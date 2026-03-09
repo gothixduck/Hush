@@ -59,25 +59,30 @@ client.on("messageCreate", async (message) => {
 
   if(message.author.bot) return;
 
-  // if(Math.random() > 0.6) return;
-
+  // if(Math.random() < 0.6) {
+ 
   try {
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: HUSH_PROMPT },
-        { role: "user", content: message.content }
-      ]
-    });
+await message.channel.sendTyping()
+const completion = await openai.chat.completions.create({
+model: "gpt-4o-mini",
+messages: [
+{ role: "system", content: HUSH_PROMPT },
+{ role: "user", content: message.content }
+]
+});
 
-    const reply = completion.choices[0].message.content;
+const reply = completion.choices[0].message.content;
 
+if (Math.random() < 0.5) {
     message.reply(reply);
+} else {
+    message.channel.send(reply);
+}
 
-  } catch(err) {
-    console.log(err);
-  }
+} catch(err) {
+console.log(err);
+}
 
 });
 
