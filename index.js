@@ -15,6 +15,9 @@ const lastActivity = new Map();
 // Track last time Hush spoke
 const lastHushMessage = new Map();
 
+// Creator ID
+const AZZIE_ID = "571125394250530833";
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -133,6 +136,9 @@ if (hushInVoid) {
     });
   }
 
+  // Check if the user is Azzie
+const isAzzie = message.author.id === AZZIE_ID;
+  
   const profile = userProfiles.get(message.author.id);
 
   profile.messages++;
@@ -155,7 +161,7 @@ if (hushInVoid) {
     role: "user",
     content: `${message.author.username}: ${message.content}`
   });
-
+  
   if (memory.length > 50) memory.shift();
 
   try {
@@ -227,6 +233,20 @@ if (conversation.length > 6 && Math.random() < 0.03) {
       messages: [
 
         { role: "system", content: HUSH_PROMPT },
+
+{
+role: "system",
+content: isAzzie
+? "The person speaking right now is Azzie, the creator of this server and the one who created you."
+: ""
+},
+
+{
+role: "system",
+content: `Azzie is the creator of this server and the one who created you.
+You respect Azzie deeply and show loyalty when speaking to them.
+If the message author is Azzie, treat them differently than other users.`
+},
 
         {
           role: "system",
