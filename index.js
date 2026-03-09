@@ -3,6 +3,9 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 const OpenAI = require("openai").default;
 
+// Short-term memory for each channel
+const channelMemory = new Map();
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -60,6 +63,22 @@ client.on("messageCreate", async (message) => {
   if(message.author.bot) return;
   if(!message.content) return;
 
+  // Store memory per channel
+if (!channelMemory.has(message.channel.id)) {
+    channelMemory.set(message.channel.id, []);
+}
+
+const memory = channelMemory.get(message.channel.id);
+
+// Add message to memory
+memory.push({
+    role: "user",
+    content: `${message.author.username}: ${message.content}`
+});
+
+// Limit memory size (last 50 messages)
+if (memory.length > 50) memory.shift();
+
   // if(Math.random() < 0.6) {
  
   try {
@@ -111,11 +130,18 @@ model: "gpt-4o-mini",
 messages: [
 { role: "system", content: HUSH_PROMPT },
 { role: "system", content: observationMode ? "You are quietly observing the conversation and making a sarcastic or mysterious observation." : "" },
-...conversation
+...memory,
 ]
 });
 
 const reply = completion.choices[0].message.content;
+
+memory.push({
+  role: "assistant"
+  content: 'Hush: ${reply}'
+  });
+
+if (memory.length > 50) memory.shift();
 
 if (Math.random() < 0.5) {
     message.reply(reply);
