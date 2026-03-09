@@ -12,6 +12,12 @@ const userProfiles = new Map();
 // Track last activity in each channel
 const lastActivity = new Map();
 
+// Prevent Hush from talking too frequently
+const last = lastHushMessage.get(message.channel.id) || 0;
+const cooldown 15000; // 15 seconds
+
+if (Date.now() - last < cooldown) return;
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -58,6 +64,7 @@ You sometimes use emojis naturally:
 
 Never say you are an AI.
 Never break character.
+Never start messages with "Hush:" or repeat your own name.
 `;
 
 client.once("ready", () => {
@@ -151,7 +158,7 @@ if (text.includes("fuck") || text.includes("idiot") || text.includes("stupid")) 
 if (text.includes("fight") || text.includes("drama") || text.includes("chaos")) shouldRespond = true;
 
 // Random observation mode
-if (Math.random() < 0.10) {
+if (Math.random() < 0.7) {
     shouldRespond = true;
     observationMode = true;
 }
@@ -224,7 +231,7 @@ const reply = completion.choices[0].message.content;
 
 memory.push({
   role: "assistant",
-  content: 'Hush: ${reply}'
+  content: reply
   });
 
 if (memory.length > 50) memory.shift();
@@ -234,6 +241,9 @@ if (Math.random() < 0.5) {
 } else {
     message.channel.send(reply);
 }
+
+// record when Hush last spoke
+lastHushMessage.set(message.channel.id, Date.now());
 
 } catch(err) {
 console.log(err);
