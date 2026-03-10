@@ -3,6 +3,9 @@ require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 const OpenAI = require("openai").default;
 
+// Allowed channel
+const ALLOWED_CHANNEL_ID = "1474464278349218088";
+
 // Short-term memory per channel
 const channelMemory = new Map();
 
@@ -75,6 +78,9 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.content) return;
 
+  // Only operate in one channel
+  if (message.channel.id !== ALLOWED_CHANNEL_ID) return;
+
   let observationMode = false;
 
   const content = message.content.toLowerCase();
@@ -110,7 +116,7 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  // If Hush is in the void she stays silent unless mentioned
+  // Void silence behaviour
   if (hushInVoid) {
 
     if (!content.includes("hush")) {
@@ -121,7 +127,7 @@ client.on("messageCreate", async (message) => {
     await message.channel.send("The void releases me…");
   }
 
-  // Cooldown to stop spam
+  // Cooldown
   const lastHush = lastHushMessage.get(message.channel.id) || 0;
   const cooldown = 15000;
 
@@ -190,42 +196,15 @@ client.on("messageCreate", async (message) => {
       shouldRespond = true;
     }
 
-    // Don't interrupt if only one user talking
     const uniqueUsers = new Set([...messages.values()].map(m => m.author.id));
     if (uniqueUsers.size < 2) return;
 
-    // Random observation mode
     if (conversation.length > 6 && Math.random() < 0.03) {
       shouldRespond = true;
       observationMode = true;
     }
 
     if (!shouldRespond) return;
-
-    // Silence check
-    const lastActive = lastActivity.get(message.channel.id) || Date.now();
-    const silenceTime = Date.now() - lastActive;
-
-    if (silenceTime > 15 * 60 * 1000) {
-
-      if (Math.random() < 0.25) {
-
-        const ghostMessages = [
-          "It's strangely quiet in here tonight… 🕯️",
-          "Did everyone disappear…?",
-          "I was enjoying the chaos earlier. Now it's just silence.",
-          "Sometimes I wonder what everyone is doing when the server goes quiet.",
-          "The silence here feels… unusual."
-        ];
-
-        const ghost = ghostMessages[Math.floor(Math.random() * ghostMessages.length)];
-
-        await message.channel.sendTyping();
-        await message.channel.send(ghost);
-
-        lastActivity.set(message.channel.id, Date.now());
-      }
-    }
 
     await message.channel.sendTyping();
     await new Promise(r => setTimeout(r, Math.random() * 4000 + 1000));
