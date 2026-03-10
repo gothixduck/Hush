@@ -15,6 +15,9 @@ const lastActivity = new Map();
 // Track last time Hush spoke
 const lastHushMessage = new Map();
 
+// Void state
+let hushInVoid = false;
+
 // Creator ID
 const AZZIE_ID = "571125394250530833";
 
@@ -42,7 +45,7 @@ Sarcastic, rebellious, observant, playful, slightly bitchy but secretly kind.
 
 You watch conversations and occasionally comment on them.
 
-You enjoy teasing users, pointing out obvious things, and making sarcastic observations.
+You enjoy teasing users and making sarcastic observations.
 
 You love chaos but rarely start it.
 
@@ -76,48 +79,47 @@ client.on("messageCreate", async (message) => {
 
   const content = message.content.toLowerCase();
 
-// Return to void command
-if (content === "!return to void") {
+  // Return to void command
+  if (content === "!return to void") {
     hushInVoid = true;
-    message.channel.send("Hush fades into the void… 🕯");
+    await message.channel.send("Hush fades into the void… 🕯");
     return;
-}
+  }
 
-// Sacrifice command
-if (content.startsWith("!sacrifice")) {
+  // Sacrifice command
+  if (content.startsWith("!sacrifice")) {
 
     const target = message.mentions.users.first();
 
     if (!target) {
-        message.channel.send("Someone must be offered to the void.");
-        return;
+      await message.channel.send("Someone must be offered to the void.");
+      return;
     }
 
     const lines = [
-        `The void accepts ${target.username}'s soul… 🥀`,
-        `${target.username} has been offered to the shadows.`,
-        `A sacrifice has been made… the void is pleased.`,
-        `${target.username} disappears into darkness.`
+      `The void accepts ${target.username}'s soul… 🥀`,
+      `${target.username} has been offered to the shadows.`,
+      `A sacrifice has been made… the void is pleased.`,
+      `${target.username} disappears into darkness.`
     ];
 
     const line = lines[Math.floor(Math.random()*lines.length)];
 
-    message.channel.send(line);
+    await message.channel.send(line);
 
     return;
-}
+  }
 
-// If Hush is in the void she stays silent unless mentioned
-if (hushInVoid) {
+  // If Hush is in the void she stays silent unless mentioned
+  if (hushInVoid) {
 
-    if (!message.content.toLowerCase().includes("hush")) {
-        return;
+    if (!content.includes("hush")) {
+      return;
     }
 
     hushInVoid = false;
-    message.channel.send("The void releases me…");
-}
-  
+    await message.channel.send("The void releases me…");
+  }
 
   // Cooldown to stop spam
   const lastHush = lastHushMessage.get(message.channel.id) || 0;
@@ -127,7 +129,7 @@ if (hushInVoid) {
 
   lastActivity.set(message.channel.id, Date.now());
 
-  // Create user profile if needed
+  // Create user profile
   if (!userProfiles.has(message.author.id)) {
     userProfiles.set(message.author.id, {
       name: message.author.username,
@@ -136,17 +138,14 @@ if (hushInVoid) {
     });
   }
 
-  // Check if the user is Azzie
-const isAzzie = message.author.id === AZZIE_ID;
-  
   const profile = userProfiles.get(message.author.id);
+
+  const isAzzie = message.author.id === AZZIE_ID;
 
   profile.messages++;
   profile.lastSeen = Date.now();
 
-  const lower = message.content.toLowerCase();
-
-  if (lower.includes("fuck") || lower.includes("idiot") || lower.includes("stupid")) {
+  if (content.includes("fuck") || content.includes("idiot") || content.includes("stupid")) {
     profile.chaosScore++;
   }
 
@@ -161,7 +160,7 @@ const isAzzie = message.author.id === AZZIE_ID;
     role: "user",
     content: `${message.author.username}: ${message.content}`
   });
-  
+
   if (memory.length > 50) memory.shift();
 
   try {
@@ -171,7 +170,7 @@ const isAzzie = message.author.id === AZZIE_ID;
 
     const messages = await message.channel.messages.fetch({ limit: 20 });
 
-    const conversation = messages.reverse().map(msg => ({
+    const conversation = [...messages.values()].reverse().map(msg => ({
       role: msg.author.bot ? "assistant" : "user",
       content: `${msg.author.username}: ${msg.content}`
     }));
@@ -183,19 +182,23 @@ const isAzzie = message.author.id === AZZIE_ID;
     if (/^hush\b/i.test(message.content)) shouldRespond = true;
     if (/\bhush\b/i.test(text)) shouldRespond = true;
 
-    if (text.includes("fuck") || text.includes("idiot") || text.includes("stupid")) shouldRespond = true;
+    if (text.includes("fight") || text.includes("drama") || text.includes("chaos")) {
+      shouldRespond = true;
+    }
 
-    if (text.includes("fight") || text.includes("drama") || text.includes("chaos")) shouldRespond = true;
+    if (text.includes("fuck") || text.includes("idiot") || text.includes("stupid")) {
+      shouldRespond = true;
+    }
 
     // Don't interrupt if only one user talking
-const uniqueUsers = new Set(messages.map(m => m.author.id));
-if (uniqueUsers.size < 2) return;
+    const uniqueUsers = new Set([...messages.values()].map(m => m.author.id));
+    if (uniqueUsers.size < 2) return;
 
-// Random observation mode (only if conversation happening)
-if (conversation.length > 6 && Math.random() < 0.03) {
-    shouldRespond = true;
-    observationMode = true;
-}
+    // Random observation mode
+    if (conversation.length > 6 && Math.random() < 0.03) {
+      shouldRespond = true;
+      observationMode = true;
+    }
 
     if (!shouldRespond) return;
 
@@ -218,13 +221,12 @@ if (conversation.length > 6 && Math.random() < 0.03) {
         const ghost = ghostMessages[Math.floor(Math.random() * ghostMessages.length)];
 
         await message.channel.sendTyping();
-        message.channel.send(ghost);
+        await message.channel.send(ghost);
 
         lastActivity.set(message.channel.id, Date.now());
       }
     }
 
-    // Hush thinking
     await message.channel.sendTyping();
     await new Promise(r => setTimeout(r, Math.random() * 4000 + 1000));
 
@@ -234,19 +236,12 @@ if (conversation.length > 6 && Math.random() < 0.03) {
 
         { role: "system", content: HUSH_PROMPT },
 
-{
-role: "system",
-content: isAzzie
-? "The person speaking right now is Azzie, the creator of this server and the one who created you."
-: ""
-},
-
-{
-role: "system",
-content: `Azzie is the creator of this server and the one who created you.
-You respect Azzie deeply and show loyalty when speaking to them.
-If the message author is Azzie, treat them differently than other users.`
-},
+        {
+          role: "system",
+          content: isAzzie
+            ? "The person speaking right now is Azzie, the creator of this server and the one who created you."
+            : ""
+        },
 
         {
           role: "system",
@@ -254,13 +249,6 @@ If the message author is Azzie, treat them differently than other users.`
 Name: ${profile.name}
 Messages sent: ${profile.messages}
 Chaos level: ${profile.chaosScore}`
-        },
-
-        {
-          role: "system",
-          content: `If chaos level is high treat them like a troublemaker.
-If they talk a lot tease them for always being around.
-If they rarely talk comment on their silence.`
         },
 
         {
@@ -284,9 +272,9 @@ If they rarely talk comment on their silence.`
     if (memory.length > 50) memory.shift();
 
     if (Math.random() < 0.5) {
-      message.reply(reply);
+      await message.reply(reply);
     } else {
-      message.channel.send(reply);
+      await message.channel.send(reply);
     }
 
     lastHushMessage.set(message.channel.id, Date.now());
